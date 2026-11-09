@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A4 맞춤 QR 생성기 & 리더기</title>
+  <!-- QRCode 생성 라이브러리 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- jsQR 읽기(스캔) 라이브러리 -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f4f6fb;
+      --card-bg: #ffffff;
+      --primary: #6c5ce7;
+      --primary-light: #efedff;
+      --primary-hover: #5b4bc4;
+      --text-main: #2d3436;
+      --text-sub: #636e72;
+      --border-color: #dfe6e9;
+      --success: #00b894;
+    }
+
+    body.dark-mode {
+      --bg-color: #1e272e;
+      --card-bg: #2f3640;
+      --primary: #a29bfe;
+      --primary-light: #3b3b58;
+      --primary-hover: #8c7ae6;
+      --text-main: #f5f6fa;
+      --text-sub: #dcdde1;
+      --border-color: #485460;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+      user-select: none;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* 상단 헤더 및 탭 네비게이션 */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tabs {
+      display: flex;
+      background-color: var(--card-bg);
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      gap: 6px;
+    }
+
+    .tab-btn {
+      padding: 10px 22px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background-color: var(--primary);
+      color: #ffffff;
+    }
+
+    body.dark-mode .tab-btn.active {
+      color: #1e272e;
+    }
+
+    .theme-btn {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* 공통 카드 패널 */
+    .control-panel {
+      background-color: var(--card-bg);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    input, select {
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #fff;
+    }
+
+    body.dark-mode .btn-primary {
+      color: #1e272e;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background-color: var(--bg-color);
+    }
+
+    .tip-text {
+      font-size: 0.82rem;
+      color: var(--text-sub);
+      margin-top: 12px;
+      text-align: right;
+    }
+
+    /* A4 미리보기 영역 */
+    .preview-wrapper {
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+      padding-bottom: 40px;
+    }
+
+    .a4-sheet {
+      width: 210mm;
+      height: 297mm;
+      background-color: #ffffff;
+      color: #000000;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+      padding: 12mm;
+      display: grid;
+      gap: 4mm;
+      align-content: stretch;
+      justify-items: stretch;
+    }
+
+    .qr-item {
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      text-align: center;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .qr-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .qr-box img, .qr-box canvas {
+      max-width: 100%;
+      height: auto !important;
+      display: block;
+    }
+
+    .qr-label {
+      margin-top: 6px;
+      font-weight: 600;
+      color: #222;
+      word-break: keep-all;
+      line-height: 1.2;
+      max-width: 95%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .qr-url-sub {
+      margin-top: 2px;
+      font-size: 0.7rem;
+      color: #777;
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* QR 읽기(리더기) 전용 스타일 */
+    .drop-zone {
+      border: 2px dashed var(--primary);
+      background-color: var(--primary-light);
+      border-radius: 16px;
+      padding: 45px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .drop-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .drop-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .drop-sub {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+    }
+
+    .kbd-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      margin: 0 2px;
+    }
+
+    .reader-result-area {
+      display: none;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      grid-template-columns: 180px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .reader-result-area.show {
+      display: grid;
+    }
+
+    .preview-img-box {
+      width: 180px;
+      height: 180px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 8px;
+    }
+
+    .preview-img-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .result-info {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-status {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .result-status.error {
+      color: #e17055;
+    }
+
+    .result-box {
+      padding: 16px;
+      border-radius: 10px;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      word-break: break-all;
+      font-size: 1.05rem;
+      font-weight: 600;
+      user-select: text;
+    }
+
+    .result-box a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* 인쇄 전용 스타일 */
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+        margin: 0;
+      }
+      .top-bar, .control-panel, #tab-read {
+        display: none !important;
+      }
+      #tab-create {
+        display: block !important;
+      }
+      .preview-wrapper {
+        padding: 0;
+        overflow: visible;
+      }
+      .a4-sheet {
+        box-shadow: none;
+        width: 210mm;
+        height: 297mm;
+        page-break-after: avoid;
+      }
+      .no-cutline .qr-item {
+        border: none;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .reader-result-area.show {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+      .a4-sheet {
+        transform: scale(0.45);
+        transform-origin: top center;
+        margin-bottom: -150mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 상단 탭 & 다크모드 버튼 -->
+    <div class="top-bar">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('create')">🖨️ QR 코드 만들기 (A4 인쇄)</button>
+        <button class="tab-btn" onclick="switchTab('read')">🔍 QR 코드 읽기 (스캔)</button>
+      </div>
+      <button class="theme-btn" id="themeToggle">🌙 다크 모드</button>
+    </div>
+
+    <!-- [탭 1] QR 코드 만들기 -->
+    <div id="tab-create" class="tab-content active">
+      <div class="control-panel">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="urlInput">링크 (URL) 입력</label>
+            <input type="url" id="urlInput" placeholder="https:// 주소나 링크를 붙여넣으세요" value="https://www.google.com">
+          </div>
+
+          <div class="form-group">
+            <label for="labelInput">QR 하단 제목/설명 (선택)</label>
+            <input type="text" id="labelInput" placeholder="예: 우리 반 설문조사 / 과제 제출방" maxlength="25">
+          </div>
+
+          <div class="form-group">
+            <label for="countSelect">A4 1장당 QR 코드 개수</label>
+            <select id="countSelect">
+              <option value="1">1개 (전면 대형 안내판)</option>
+              <option value="2">2개 (상·하 분할)</option>
+              <option value="4">4개 (2 × 2 배치)</option>
+              <option value="6">6개 (2 × 3 배치)</option>
+              <option value="8" selected>8개 (2 × 4 배치)</option>
+              <option value="12">12개 (3 × 4 배치)</option>
+              <option value="16">16개 (4 × 4 미니 카드)</option>
+              <option value="24">24개 (4 × 6 스티커 크기)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="cutlineSelect">자르기 안내선(점선) 표시</label>
+            <select id="cutlineSelect">
+              <option value="show" selected>점선 표시 (오려서 배부할 때 편리해요)</option>
+              <option value="hide">점선 숨기기 (깔끔한 출력)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="showUrlSelect">하단 링크 주소 표시</label>
+            <select id="showUrlSelect">
+              <option value="show">링크 주소 작게 표시</option>
+              <option value="hide" selected>링크 주소 숨기기</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
+        </div>
+        <p class="tip-text">💡 PDF로 저장하려면 버튼을 누른 뒤 인쇄 창에서 프린터를 <b>'PDF로 저장(Save as PDF)'</b>으로 선택하세요.</p>
+      </div>
+
+      <!-- A4 미리보기 영역 -->
+      <div class="preview-wrapper">
+        <div class="a4-sheet" id="a4Sheet"></div>
+      </div>
+    </div>
+
+    <!-- [탭 2] QR 코드 읽기 -->
+    <div id="tab-read" class="tab-content">
+      <div class="control-panel">
+        <input type="file" id="qrFileInput" accept="image/*" style="display: none;">
+        
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('qrFileInput').click()">
+          <div class="drop-icon">📋</div>
+          <div class="drop-title">여기를 클릭해 QR 이미지를 업로드하거나, 화면에서 바로 붙여넣기 하세요!</div>
+          <div class="drop-sub">
+            캡처한 이미지를 <span class="kbd-badge">Ctrl</span> + <span class="kbd-badge">V</span> 로 붙여넣거나 이미지 파일을 끌어다 놓으세요.
+          </div>
+        </div>
+
+        <!-- 스캔 결과 영역 -->
+        <div class="reader-result-area" id="readerResultArea">
+          <div class="preview-img-box">
+            <img id="scannedPreviewImg" src="" alt="업로드된 QR 이미지">
+          </div>
+          <div class="result-info">
+            <div class="result-status" id="resultStatus">✅ QR 코드 인식 성공!</div>
+            <div class="result-box" id="resultTextBox"></div>
+            <div class="action-btns">
+              <a href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary" id="openLinkBtn" style="display: none;">🔗 링크 바로 열기</a>
+              <button class="btn btn-outline" id="copyResultBtn" onclick="copyScannedText()">📄 내용 복사하기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================
+       탭 전환 및 다크 모드 로직
+    ============================ */
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabCreate = document.getElementById('tab-create');
+    const tabRead = document.getElementById('tab-read');
+    const themeToggle = document.getElementById('themeToggle');
+
+    function switchTab(mode) {
+      if (mode === 'create') {
+        tabBtns[0].classList.add('active');
+        tabBtns[1].classList.remove('active');
+        tabCreate.classList.add('active');
+        tabRead.classList.remove('active');
+      } else {
+        tabBtns[1].classList.add('active');
+        tabBtns[0].classList.remove('active');
+        tabRead.classList.add('active');
+        tabCreate.classList.remove('active');
+      }
+    }
+
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      themeToggle.textContent = isDark ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    });
+
+    /* ============================
+       [탭 1] QR 생성기 로직
+    ============================ */
+    const urlInput = document.getElementById('urlInput');
+    const labelInput = document.getElementById('labelInput');
+    const countSelect = document.getElementById('countSelect');
+    const cutlineSelect = document.getElementById('cutlineSelect');
+    const showUrlSelect = document.getElementById('showUrlSelect');
+    const a4Sheet = document.getElementById('a4Sheet');
+
+    const layoutConfig = {
+      1:  { cols: 1, rows: 1, qrSize: 380, fontSize: '1.8rem' },
+      2:  { cols: 1, rows: 2, qrSize: 260, fontSize: '1.4rem' },
+      4:  { cols: 2, rows: 2, qrSize: 200, fontSize: '1.15rem' },
+      6:  { cols: 2, rows: 3, qrSize: 165, fontSize: '1.05rem' },
+      8:  { cols: 2, rows: 4, qrSize: 135, fontSize: '0.95rem' },
+      12: { cols: 3, rows: 4, qrSize: 120, fontSize: '0.88rem' },
+      16: { cols: 4, rows: 4, qrSize: 100, fontSize: '0.8rem' },
+      24: { cols: 4, rows: 6, qrSize: 82,  fontSize: '0.72rem' }
+    };
+
+    function renderQRCodes() {
+      const url = urlInput.value.trim() || 'https://';
+      const labelText = labelInput.value.trim();
+      const count = parseInt(countSelect.value, 10);
+      const showCutline = cutlineSelect.value === 'show';
+      const showUrl = showUrlSelect.value === 'show';
+      const config = layoutConfig[count];
+
+      a4Sheet.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+      a4Sheet.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
+
+      if (showCutline) {
+        a4Sheet.classList.remove('no-cutline');
+      } else {
+        a4Sheet.classList.add('no-cutline');
+      }
+
+      a4Sheet.innerHTML = '';
+
+      for (let i = 0; i < count; i++) {
+        const item = document.createElement('div');
+        item.className = 'qr-item';
+        if (!showCutline) item.style.border = 'none';
+
+        const qrBox = document.createElement('div');
+        qrBox.className = 'qr-box';
+        item.appendChild(qrBox);
+
+        new QRCode(qrBox, {
+          text: url,
+          width: config.qrSize,
+          height: config.qrSize,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        if (labelText) {
+          const labelEl = document.createElement('div');
+          labelEl.className = 'qr-label';
+          labelEl.style.fontSize = config.fontSize;
+          labelEl.textContent = labelText;
+          item.appendChild(labelEl);
+        }
+
+        if (showUrl && urlInput.value.trim()) {
+          const urlEl = document.createElement('div');
+          urlEl.className = 'qr-url-sub';
+          urlEl.textContent = urlInput.value.trim();
+          item.appendChild(urlEl);
+        }
+
+        a4Sheet.appendChild(item);
+      }
+    }
+
+    [urlInput, labelInput].forEach(el => el.addEventListener('input', renderQRCodes));
+    [countSelect, cutlineSelect, showUrlSelect].forEach(el => el.addEventListener('change', renderQRCodes));
+    renderQRCodes();
+
+    /* ============================
+       [탭 2] QR 리더기(스캔) 로직
+    ============================ */
+    const qrFileInput = document.getElementById('qrFileInput');
+    const dropZone = document.getElementById('dropZone');
+    const readerResultArea = document.getElementById('readerResultArea');
+    const scannedPreviewImg = document.getElementById('scannedPreviewImg');
+    const resultStatus = document.getElementById('resultStatus');
+    const resultTextBox = document.getElementById('resultTextBox');
+    const openLinkBtn = document.getElementById('openLinkBtn');
+    const copyResultBtn = document.getElementById('copyResultBtn');
+
+    let currentScannedText = '';
+
+    // 이미지 파일로부터 QR 코드 판독
+    function processQRImageFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+
+      // 다른 탭에 있더라도 이미지를 붙여넣으면 자동으로 QR 읽기 탭으로 전환
+      switchTab('read');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          scannedPreviewImg.src = img.src;
+          readerResultArea.classList.add('show');
+
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert"
+          });
+
+          if (code && code.data) {
+            currentScannedText = code.data.trim();
+            resultStatus.textContent = '✅ QR 코드 인식 성공!';
+            resultStatus.classList.remove('error');
+            copyResultBtn.style.display = 'inline-flex';
+
+            // URL 여부 판별
+            const isUrl = /^(https?:\/\/|www\.)/i.test(currentScannedText);
+            if (isUrl) {
+              const targetHref = currentScannedText.startsWith('http') ? currentScannedText : 'https://' + currentScannedText;
+              resultTextBox.innerHTML = `<a href="${targetHref}" target="_blank" rel="noopener noreferrer">${currentScannedText}</a>`;
+              openLinkBtn.href = targetHref;
+              openLinkBtn.style.display = 'inline-flex';
+            } else {
+              resultTextBox.textContent = currentScannedText;
+              openLinkBtn.style.display = 'none';
+            }
+          } else {
+            currentScannedText = '';
+            resultStatus.textContent = '⚠️ 이미지에서 QR 코드를 찾지 못했습니다.';
+            resultStatus.classList.add('error');
+            resultTextBox.textContent = 'QR 코드가 선명하게 보이도록 다시 캡처하거나 다른 이미지를 업로드해 주세요.';
+            openLinkBtn.style.display = 'none';
+            copyResultBtn.style.display = 'none';
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // 1. 파일 선택 업로드
+    qrFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        processQRImageFile(e.target.files[0]);
+        qrFileInput.value = '';
+      }
+    });
+
+    // 2. 드래그 앤 드롭 업로드
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processQRImageFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // 3. Ctrl + V 클립보드 이미지 붙여넣기 (페이지 어디서나 작동)
+    window.addEventListener('paste', (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          processQRImageFile(file);
+          break;
+        }
+      }
+    });
+
+    // 스캔된 텍스트 복사
+    function copyScannedText() {
+      if (!currentScannedText) return;
+      navigator.clipboard.writeText(currentScannedText).then(() => {
+        const originalText = copyResultBtn.textContent;
+        copyResultBtn.textContent = '✔️ 복사 완료!';
+        setTimeout(() => {
+          copyResultBtn.textContent = originalText;
+        }, 1500);
+      });
+    }
+
+    /* ============================
+       우클릭 및 개발자 도구 단축키 방지
+    ============================ */
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (e.ctrlKey && ['U', 'u', 'S', 's'].includes(e.key)) ||
+        (e.metaKey && e.altKey && ['I', 'i', 'J', 'j', 'C', 'c', 'U', 'u'].includes(e.key))
+      ) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>
