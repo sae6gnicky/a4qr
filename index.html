@@ -212,7 +212,7 @@
       text-align: right;
     }
 
-    /* A4 미리보기 영역 (화면 및 인쇄 공통 비율) */
+    /* A4 미리보기 영역 (화면 표시용) */
     .preview-wrapper {
       display: flex;
       justify-content: center;
@@ -409,7 +409,7 @@
       flex-wrap: wrap;
     }
 
-    /* 화면에서만 모바일 축소 적용 (인쇄 시에는 절대 축소되지 않도록 screen으로 분리) */
+    /* 화면에서만 모바일 축소 적용 */
     @media screen and (max-width: 850px) {
       .form-grid {
         grid-template-columns: 1fr;
@@ -419,13 +419,13 @@
         justify-items: center;
       }
       .a4-sheet {
-        transform: scale(0.45);
+        transform: scale(0.42);
         transform-origin: top center;
-        margin-bottom: -155mm;
+        margin-bottom: -165mm;
       }
     }
 
-    /* 인쇄 전용 스타일: A4 용지 100% 꽉 차게 강제 고정 */
+    /* 인쇄 전용 스타일: 빈 뒷장(2페이지) 생성 원천 차단 */
     @page {
       size: A4 portrait;
       margin: 0;
@@ -433,8 +433,8 @@
 
     @media print {
       html, body {
-        width: 210mm !important;
-        height: 297mm !important;
+        width: 100% !important;
+        height: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         background: #ffffff !important;
@@ -443,44 +443,37 @@
         print-color-adjust: exact;
       }
 
-      .container {
-        max-width: none !important;
-        width: 210mm !important;
-        height: 297mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
       .top-bar, .control-panel, #tab-read {
         display: none !important;
       }
 
-      #tab-create {
+      .container, #tab-create, .preview-wrapper {
         display: block !important;
-        width: 210mm !important;
-        height: 297mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .preview-wrapper {
-        display: block !important;
-        width: 210mm !important;
-        height: 297mm !important;
+        max-width: none !important;
+        width: 100% !important;
+        height: auto !important;
         margin: 0 !important;
         padding: 0 !important;
         overflow: hidden !important;
       }
 
+      /* 모바일/PC 브라우저의 미세 여백 및 바닥글 영역까지 고려해 1페이지 안에 완벽히 고정 */
       .a4-sheet {
-        width: 210mm !important;
-        height: 297mm !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 282mm !important;
+        max-height: 98vh !important;
         margin: 0 !important;
-        padding: 8mm !important;
+        padding: 6mm !important;
         box-shadow: none !important;
         transform: none !important;
-        page-break-after: avoid;
-        page-break-inside: avoid;
+        page-break-after: avoid !important;
+        page-break-before: avoid !important;
+        page-break-inside: avoid !important;
+        break-after: avoid !important;
+        break-inside: avoid !important;
       }
 
       .no-cutline .qr-item {
@@ -549,7 +542,7 @@
         <div class="btn-row">
           <button class="btn btn-primary" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
         </div>
-        <p class="tip-text">💡 인쇄 창 오른쪽의 <b>[설정 더보기]</b>에서 <b>여백: '없음'(또는 기본값) / 배율: '기본값(100%)'</b>인지 확인해 주세요.</p>
+        <p class="tip-text">💡 인쇄 창에서 <b>1페이지로 딱 맞게</b> 출력됩니다. (PDF 저장도 지원)</p>
       </div>
 
       <!-- A4 미리보기 영역 -->
@@ -628,7 +621,6 @@
     const showUrlSelect = document.getElementById('showUrlSelect');
     const a4Sheet = document.getElementById('a4Sheet');
 
-    // A4 격자 배치 및 폰트 크기 설정 (QR 크기는 각 격자 칸에 맞춰 100% 자동 조절됨)
     const layoutConfig = {
       1:  { cols: 1, rows: 1, fontSize: '28pt', padding: '12mm' },
       2:  { cols: 1, rows: 2, fontSize: '20pt', padding: '8mm' },
@@ -659,7 +651,6 @@
 
       a4Sheet.innerHTML = '';
 
-      // QR 코드 1개를 고해상도(500x500)로 먼저 생성한 뒤 이미지 데이터 추출하여 복제 (인쇄 품질 및 속도 향상)
       const tempContainer = document.createElement('div');
       new QRCode(tempContainer, {
         text: url,
