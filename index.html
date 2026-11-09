@@ -212,7 +212,7 @@
       text-align: right;
     }
 
-    /* A4 미리보기 영역 */
+    /* A4 미리보기 영역 (화면 및 인쇄 공통 비율) */
     .preview-wrapper {
       display: flex;
       justify-content: center;
@@ -226,58 +226,71 @@
       background-color: #ffffff;
       color: #000000;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-      padding: 12mm;
+      padding: 8mm;
       display: grid;
-      gap: 4mm;
-      align-content: stretch;
-      justify-items: stretch;
+      gap: 3mm;
+      box-sizing: border-box;
     }
 
     .qr-item {
-      border: 1px dashed #ccc;
-      border-radius: 8px;
+      border: 1px dashed #b2bec3;
+      border-radius: 6px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 6px;
+      padding: 4mm;
       text-align: center;
       overflow: hidden;
       background: #fff;
+      width: 100%;
+      height: 100%;
     }
 
     .qr-box {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
-    .qr-box img, .qr-box canvas {
+    .qr-box canvas {
+      display: none !important;
+    }
+
+    .qr-box img {
+      display: block !important;
+      width: auto;
+      height: auto;
       max-width: 100%;
-      height: auto !important;
-      display: block;
+      max-height: 100%;
+      object-fit: contain;
     }
 
     .qr-label {
-      margin-top: 6px;
-      font-weight: 600;
-      color: #222;
+      margin-top: 2mm;
+      font-weight: 700;
+      color: #111;
       word-break: keep-all;
       line-height: 1.2;
+      max-width: 98%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .qr-url-sub {
+      margin-top: 1mm;
+      font-size: 8pt;
+      color: #666;
       max-width: 95%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-
-    .qr-url-sub {
-      margin-top: 2px;
-      font-size: 0.7rem;
-      color: #777;
-      max-width: 90%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     /* QR 읽기(리더기) 전용 스타일 */
@@ -396,40 +409,8 @@
       flex-wrap: wrap;
     }
 
-    /* 인쇄 전용 스타일 */
-    @page {
-      size: A4 portrait;
-      margin: 0;
-    }
-
-    @media print {
-      body {
-        background: none;
-        padding: 0;
-        margin: 0;
-      }
-      .top-bar, .control-panel, #tab-read {
-        display: none !important;
-      }
-      #tab-create {
-        display: block !important;
-      }
-      .preview-wrapper {
-        padding: 0;
-        overflow: visible;
-      }
-      .a4-sheet {
-        box-shadow: none;
-        width: 210mm;
-        height: 297mm;
-        page-break-after: avoid;
-      }
-      .no-cutline .qr-item {
-        border: none;
-      }
-    }
-
-    @media (max-width: 800px) {
+    /* 화면에서만 모바일 축소 적용 (인쇄 시에는 절대 축소되지 않도록 screen으로 분리) */
+    @media screen and (max-width: 850px) {
       .form-grid {
         grid-template-columns: 1fr;
       }
@@ -440,7 +421,70 @@
       .a4-sheet {
         transform: scale(0.45);
         transform-origin: top center;
-        margin-bottom: -150mm;
+        margin-bottom: -155mm;
+      }
+    }
+
+    /* 인쇄 전용 스타일: A4 용지 100% 꽉 차게 강제 고정 */
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    @media print {
+      html, body {
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .container {
+        max-width: none !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .top-bar, .control-panel, #tab-read {
+        display: none !important;
+      }
+
+      #tab-create {
+        display: block !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .preview-wrapper {
+        display: block !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+
+      .a4-sheet {
+        width: 210mm !important;
+        height: 297mm !important;
+        margin: 0 !important;
+        padding: 8mm !important;
+        box-shadow: none !important;
+        transform: none !important;
+        page-break-after: avoid;
+        page-break-inside: avoid;
+      }
+
+      .no-cutline .qr-item {
+        border: none !important;
       }
     }
   </style>
@@ -468,19 +512,19 @@
 
           <div class="form-group">
             <label for="labelInput">QR 하단 제목/설명 (선택)</label>
-            <input type="text" id="labelInput" placeholder="예: 우리 반 설문조사 / 과제 제출방" maxlength="25">
+            <input type="text" id="labelInput" placeholder="예: 구글 / 우리 반 설문조사" maxlength="25">
           </div>
 
           <div class="form-group">
             <label for="countSelect">A4 1장당 QR 코드 개수</label>
             <select id="countSelect">
               <option value="1">1개 (전면 대형 안내판)</option>
-              <option value="2">2개 (상·하 분할)</option>
+              <option value="2">2개 (상·하 2분할)</option>
               <option value="4">4개 (2 × 2 배치)</option>
               <option value="6">6개 (2 × 3 배치)</option>
-              <option value="8" selected>8개 (2 × 4 배치)</option>
+              <option value="8">8개 (2 × 4 배치)</option>
               <option value="12">12개 (3 × 4 배치)</option>
-              <option value="16">16개 (4 × 4 미니 카드)</option>
+              <option value="16" selected>16개 (4 × 4 미니 카드)</option>
               <option value="24">24개 (4 × 6 스티커 크기)</option>
             </select>
           </div>
@@ -505,7 +549,7 @@
         <div class="btn-row">
           <button class="btn btn-primary" onclick="window.print()">🖨️ 인쇄 / PDF로 저장</button>
         </div>
-        <p class="tip-text">💡 PDF로 저장하려면 버튼을 누른 뒤 인쇄 창에서 프린터를 <b>'PDF로 저장(Save as PDF)'</b>으로 선택하세요.</p>
+        <p class="tip-text">💡 인쇄 창 오른쪽의 <b>[설정 더보기]</b>에서 <b>여백: '없음'(또는 기본값) / 배율: '기본값(100%)'</b>인지 확인해 주세요.</p>
       </div>
 
       <!-- A4 미리보기 영역 -->
@@ -584,15 +628,16 @@
     const showUrlSelect = document.getElementById('showUrlSelect');
     const a4Sheet = document.getElementById('a4Sheet');
 
+    // A4 격자 배치 및 폰트 크기 설정 (QR 크기는 각 격자 칸에 맞춰 100% 자동 조절됨)
     const layoutConfig = {
-      1:  { cols: 1, rows: 1, qrSize: 380, fontSize: '1.8rem' },
-      2:  { cols: 1, rows: 2, qrSize: 260, fontSize: '1.4rem' },
-      4:  { cols: 2, rows: 2, qrSize: 200, fontSize: '1.15rem' },
-      6:  { cols: 2, rows: 3, qrSize: 165, fontSize: '1.05rem' },
-      8:  { cols: 2, rows: 4, qrSize: 135, fontSize: '0.95rem' },
-      12: { cols: 3, rows: 4, qrSize: 120, fontSize: '0.88rem' },
-      16: { cols: 4, rows: 4, qrSize: 100, fontSize: '0.8rem' },
-      24: { cols: 4, rows: 6, qrSize: 82,  fontSize: '0.72rem' }
+      1:  { cols: 1, rows: 1, fontSize: '28pt', padding: '12mm' },
+      2:  { cols: 1, rows: 2, fontSize: '20pt', padding: '8mm' },
+      4:  { cols: 2, rows: 2, fontSize: '16pt', padding: '6mm' },
+      6:  { cols: 2, rows: 3, fontSize: '14pt', padding: '5mm' },
+      8:  { cols: 2, rows: 4, fontSize: '12pt', padding: '4mm' },
+      12: { cols: 3, rows: 4, fontSize: '11pt', padding: '3.5mm' },
+      16: { cols: 4, rows: 4, fontSize: '10pt', padding: '3mm' },
+      24: { cols: 4, rows: 6, fontSize: '9pt',  padding: '2mm' }
     };
 
     function renderQRCodes() {
@@ -603,8 +648,8 @@
       const showUrl = showUrlSelect.value === 'show';
       const config = layoutConfig[count];
 
-      a4Sheet.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
-      a4Sheet.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
+      a4Sheet.style.gridTemplateColumns = `repeat(${config.cols}, minmax(0, 1fr))`;
+      a4Sheet.style.gridTemplateRows = `repeat(${config.rows}, minmax(0, 1fr))`;
 
       if (showCutline) {
         a4Sheet.classList.remove('no-cutline');
@@ -614,23 +659,34 @@
 
       a4Sheet.innerHTML = '';
 
+      // QR 코드 1개를 고해상도(500x500)로 먼저 생성한 뒤 이미지 데이터 추출하여 복제 (인쇄 품질 및 속도 향상)
+      const tempContainer = document.createElement('div');
+      new QRCode(tempContainer, {
+        text: url,
+        width: 500,
+        height: 500,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      const sourceCanvas = tempContainer.querySelector('canvas');
+      const qrDataUrl = sourceCanvas ? sourceCanvas.toDataURL('image/png') : '';
+
       for (let i = 0; i < count; i++) {
         const item = document.createElement('div');
         item.className = 'qr-item';
+        item.style.padding = config.padding;
         if (!showCutline) item.style.border = 'none';
 
         const qrBox = document.createElement('div');
         qrBox.className = 'qr-box';
-        item.appendChild(qrBox);
 
-        new QRCode(qrBox, {
-          text: url,
-          width: config.qrSize,
-          height: config.qrSize,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
+        const qrImg = document.createElement('img');
+        qrImg.src = qrDataUrl;
+        qrImg.alt = 'QR Code';
+        qrBox.appendChild(qrImg);
+        item.appendChild(qrBox);
 
         if (labelText) {
           const labelEl = document.createElement('div');
@@ -669,11 +725,9 @@
 
     let currentScannedText = '';
 
-    // 이미지 파일로부터 QR 코드 판독
     function processQRImageFile(file) {
       if (!file || !file.type.startsWith('image/')) return;
 
-      // 다른 탭에 있더라도 이미지를 붙여넣으면 자동으로 QR 읽기 탭으로 전환
       switchTab('read');
 
       const reader = new FileReader();
@@ -700,7 +754,6 @@
             resultStatus.classList.remove('error');
             copyResultBtn.style.display = 'inline-flex';
 
-            // URL 여부 판별
             const isUrl = /^(https?:\/\/|www\.)/i.test(currentScannedText);
             if (isUrl) {
               const targetHref = currentScannedText.startsWith('http') ? currentScannedText : 'https://' + currentScannedText;
@@ -725,7 +778,6 @@
       reader.readAsDataURL(file);
     }
 
-    // 1. 파일 선택 업로드
     qrFileInput.addEventListener('change', (e) => {
       if (e.target.files && e.target.files[0]) {
         processQRImageFile(e.target.files[0]);
@@ -733,7 +785,6 @@
       }
     });
 
-    // 2. 드래그 앤 드롭 업로드
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropZone.classList.add('dragover');
@@ -749,7 +800,6 @@
       }
     });
 
-    // 3. Ctrl + V 클립보드 이미지 붙여넣기 (페이지 어디서나 작동)
     window.addEventListener('paste', (e) => {
       const items = (e.clipboardData || e.originalEvent.clipboardData).items;
       for (let i = 0; i < items.length; i++) {
@@ -761,7 +811,6 @@
       }
     });
 
-    // 스캔된 텍스트 복사
     function copyScannedText() {
       if (!currentScannedText) return;
       navigator.clipboard.writeText(currentScannedText).then(() => {
