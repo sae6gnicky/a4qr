@@ -457,7 +457,6 @@
         overflow: hidden !important;
       }
 
-      /* 모바일/PC 브라우저의 미세 여백 및 바닥글 영역까지 고려해 1페이지 안에 완벽히 고정 */
       .a4-sheet {
         position: fixed !important;
         top: 0 !important;
@@ -517,7 +516,8 @@
               <option value="6">6개 (2 × 3 배치)</option>
               <option value="8">8개 (2 × 4 배치)</option>
               <option value="12">12개 (3 × 4 배치)</option>
-              <option value="16" selected>16개 (4 × 4 미니 카드)</option>
+              <option value="16">16개 (4 × 4 미니 카드)</option>
+              <option value="18" selected>18개 (3 × 6 배치)</option>
               <option value="24">24개 (4 × 6 스티커 크기)</option>
             </select>
           </div>
@@ -629,6 +629,7 @@
       8:  { cols: 2, rows: 4, fontSize: '12pt', padding: '4mm' },
       12: { cols: 3, rows: 4, fontSize: '11pt', padding: '3.5mm' },
       16: { cols: 4, rows: 4, fontSize: '10pt', padding: '3mm' },
+      18: { cols: 3, rows: 6, fontSize: '9.5pt', padding: '2.5mm' },
       24: { cols: 4, rows: 6, fontSize: '9pt',  padding: '2mm' }
     };
 
@@ -814,9 +815,12 @@
     }
 
     /* ============================
-       우클릭 및 개발자 도구 단축키 방지
+       우클릭, 드래그 및 개발자 도구 단축키 방지
     ============================ */
     document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+    document.addEventListener('dragstart', function(e) {
       e.preventDefault();
     });
     document.addEventListener('keydown', function(e) {
